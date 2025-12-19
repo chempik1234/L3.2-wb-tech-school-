@@ -1,0 +1,133 @@
+x-def-logging: &default-logging
+  logging:
+    driver: "loki"
+    options:
+      loki-url: "http://localhost:3100/loki/api/v1/push"
+      loki-batch-size: "100"
+      loki-retries: 2
+      loki-max-backoff: 1000ms
+      loki-timeout: 1s
+      labels: "service={{.Name}},instance={{.ID}}"
+
+x-shortener-template: &shortener-template
+  image: shortener
+  restart: unless-stopped
+  entrypoint: "sleep 1h"
+  depends_on:
+    postgres_master:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  env_file:
+    - ../config/.env
+  <<: *default-logging
+
+
+services:
+  shortener_1:
+    <<: *shortener-template
+    expose:
+      - "8081"
+    scale: 2
+    networks:
+      - backend
+
+  shortener_2:
+    <<: *shortener-template
+    expose:
+      - "8082"
+    scale: 2
+    networks:
+      - backend
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    volumes:
+      - ../nginx/conf.d:/etc/nginx/conf.d
+      - ../nginx/static:/var/static
+    depends_on:
+      shortener_1:
+        condition: service_started
+      shortener_2:
+        condition: service_started
+    networks:
+      - backend
+
+  postgres_master:
+    image: postgres:latest
+    expose:
+      - "5432"
+    ports:
+      - "5432:5432"
+    env_file:
+      - ../config/.env
+    volumes:
+      - shortener_postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-d", "shortener", "-U", "shortener" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    expose:
+      - "6379"
+    env_file:
+      - ../config/.env
+    volumes:
+      - redis_data:/data
+      - ../redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf", "--requirepass", "$${REDIS_PASSWORD}"]
+    # "/bin/sh -c redis-server --requirepass \"$${REDIS_PASSWORD:?REDIS_PASSWORD variable is not set}\""
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 1s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - backend
+
+  # e2e_test:
+  #   build:
+  #     context: ../e2e_test
+  #     dockerfile: ../integration_test.Dockerfile
+  #   depends_on:
+  #     shortener:
+  #       condition: service_started
+  #   env_file:
+  #     - ../config/test/.env
+  #   network_mode: host
+
+  #region monitoring
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+      - "9095:9095"
+    volumes:
+      - ../loki/loki-config.yml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3100/ready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - backend
+
+volumes:
+  shortener_postgres:
+  redis_data:
+
+networks:
+  backend:
+    driver: bridge
