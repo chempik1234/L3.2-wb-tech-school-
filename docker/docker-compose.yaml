@@ -12,7 +12,7 @@ x-def-logging: &default-logging
 x-shortener-template: &shortener-template
   image: shortener
   restart: unless-stopped
-  entrypoint: "sleep 1h"
+  # entrypoint: "sleep 1h"
   depends_on:
     postgres_master:
       condition: service_healthy
