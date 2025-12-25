@@ -3,7 +3,6 @@ module github.com/chempik1234/L3.2-wb-tech-school-/shortener
 go 1.25.1
 
 require (
-	github.com/chempik1234/L3.1-wb-tech-school/delayed_notifier v0.0.0-20251028161359-2a231e8cac83
 	github.com/chempik1234/super-danis-library-golang v1.2.4
 	github.com/gin-gonic/gin v1.9.1
 	github.com/wb-go/wbf v0.0.11

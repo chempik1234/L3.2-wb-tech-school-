@@ -1,9 +1,8 @@
 CREATE TABLE IF NOT EXISTS links
 (
-    id         SERIAL PRIMARY KEY,
-    source_url TEXT      NOT NULL,
-    short_url  TEXT      NOT NULL UNIQUE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    source_url TEXT                     NOT NULL,  -- yeah I do edit migration files before I ever deployed my DB
+    short_url  VARCHAR(6)               NOT NULL PRIMARY KEY,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_short_url ON links (short_url);

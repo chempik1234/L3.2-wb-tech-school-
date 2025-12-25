@@ -3,7 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/chempik1234/L3.2-wb-tech-school-/shortener/internal/adapters/storage"
+	"github.com/chempik1234/L3.2-wb-tech-school-/shortener/internal/adapters/analytics"
+	"github.com/chempik1234/L3.2-wb-tech-school-/shortener/internal/adapters/shortener"
 	"github.com/chempik1234/L3.2-wb-tech-school-/shortener/internal/config"
 	"github.com/chempik1234/L3.2-wb-tech-school-/shortener/internal/models"
 	"github.com/chempik1234/L3.2-wb-tech-school-/shortener/internal/service"
@@ -105,13 +106,20 @@ func main() {
 	//endregion
 
 	//region services
-	shortenerStorageRepository := storage.NewShortenerStorageInMemoryRepo()
+	shortenerStorageRepository := shortener.NewStoragePostgresRepo(postgresDB, postgresRetryStrategy)
+	analyticsStorage := analytics.NewStoragePostgresRepo(postgresDB, postgresRetryStrategy)
 	cacheService := services.NewCachePopularService[string, models.Link](
 		cfg.CacheConfig.MinRequestsBeforeCaching,
 		cfg.CacheConfig.LruCapacity,
 		cache.NewRedisWBFCache[string, models.Link](redisClient, redisRetryStrategy),
 	)
-	shortenerService := service.NewShortenerService(shortenerStorageRepository, cacheService)
+	shortenerService := service.NewShortenerService(
+		shortenerStorageRepository,
+		analyticsStorage,
+		cacheService,
+		cfg.MaxLinkLen,
+		time.Duration(cfg.BatchingPeriodSeconds)*time.Second,
+	)
 	//endregion
 
 	ctx, stopCtx := context.WithCancel(context.Background())
@@ -121,7 +129,7 @@ func main() {
 	wg.Add(1)
 	go func(wg *sync.WaitGroup, ctx2 context.Context) {
 		defer wg.Done()
-		//TODO: some background service run
+		shortenerService.RunBatchSavingInBackground(ctx2)
 	}(wg, ctx)
 	//endregion
 

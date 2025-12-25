@@ -18,6 +18,9 @@ type AppConfig struct {
 
 	PostgresRetryConfig config2.RetryStrategyConfig `env-prefix:"SHORTENER_RETRY_POSTGRES_"`
 	RedisRetryConfig    config2.RetryStrategyConfig `env-prefix:"SHORTENER_RETRY_REDIS_"`
+
+	MaxLinkLen            int `env:"SHORTENER_MAX_LINK_LEN"`
+	BatchingPeriodSeconds int `env:"SHORTENER_BATCHING_PERIOD_SECONDS"`
 }
 
 // NewAppConfig creates a new struct of "THE config"
@@ -57,6 +60,9 @@ func NewAppConfig(configFilePath, envFilePath string) (*AppConfig, error) {
 	cfg.SetDefault("shortener.retry_redis.backoff", 1.2)
 	cfg.SetDefault("shortener.retry_postgres.backoff", 1.5)
 	cfg.SetDefault("shortener.retry_kafka.backoff", 1.5)
+
+	cfg.SetDefault("shortener.max_link_len", 6)
+	cfg.SetDefault("shortener.batching_period_seconds", 10)
 	//endregion
 
 	// region flags
@@ -113,6 +119,8 @@ func NewAppConfig(configFilePath, envFilePath string) (*AppConfig, error) {
 			DelayMilliseconds: cfg.GetInt("shortener.retry_redis.delay_milliseconds"),
 			Backoff:           cfg.GetFloat64("shortener.retry_redis.backoff"),
 		},
+		MaxLinkLen:            cfg.GetInt("shortener.max_link_len"),
+		BatchingPeriodSeconds: cfg.GetInt("shortener.batching_period_seconds"),
 	}
 
 	return appConfig, nil

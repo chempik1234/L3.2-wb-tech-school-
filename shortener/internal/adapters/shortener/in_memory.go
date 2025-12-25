@@ -1,4 +1,4 @@
-package storage
+package shortener
 
 import (
 	"context"
@@ -7,22 +7,22 @@ import (
 	"sync"
 )
 
-// ShortenerStorageInMemoryRepo - impl ports.ShortenerStorageRepository (Map, in-memory)
-type ShortenerStorageInMemoryRepo struct {
+// StorageInMemoryRepo - impl ports.ShortenerStorageRepository (Map, in-memory)
+type StorageInMemoryRepo struct {
 	mu   *sync.RWMutex
 	data map[string]*models.Link
 }
 
-// NewShortenerStorageInMemoryRepo - creates new instance of *NewShortenerStorageInMemoryRepo.
-func NewShortenerStorageInMemoryRepo() *ShortenerStorageInMemoryRepo {
-	return &ShortenerStorageInMemoryRepo{
+// NewStorageInMemoryRepo - creates new instance of *NewStorageInMemoryRepo.
+func NewStorageInMemoryRepo() *StorageInMemoryRepo {
+	return &StorageInMemoryRepo{
 		data: make(map[string]*models.Link),
 		mu:   new(sync.RWMutex),
 	}
 }
 
 // GetObjects retrieves all Link objects from storage
-func (s *ShortenerStorageInMemoryRepo) GetObjects(ctx context.Context) ([]*models.Link, error) {
+func (s *StorageInMemoryRepo) GetObjects(ctx context.Context) ([]*models.Link, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -36,7 +36,7 @@ func (s *ShortenerStorageInMemoryRepo) GetObjects(ctx context.Context) ([]*model
 // GetObjectByID retrieves a Link object by its ID
 //
 // error on not exists
-func (s *ShortenerStorageInMemoryRepo) GetObjectByID(ctx context.Context, id string) (*models.Link, error) {
+func (s *StorageInMemoryRepo) GetObjectByID(ctx context.Context, id string) (*models.Link, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -52,7 +52,7 @@ func (s *ShortenerStorageInMemoryRepo) GetObjectByID(ctx context.Context, id str
 // Given shortURL is used, so pre-generate it!
 //
 // Error on conflict
-func (s *ShortenerStorageInMemoryRepo) CreateObject(ctx context.Context, fullyReadyObject *models.Link) (*models.Link, error) {
+func (s *StorageInMemoryRepo) CreateObject(ctx context.Context, fullyReadyObject *models.Link) (*models.Link, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -67,7 +67,7 @@ func (s *ShortenerStorageInMemoryRepo) CreateObject(ctx context.Context, fullyRe
 // UpdateObject updates an existing Link object in storage
 //
 // uses shortURL given in "fullyReadyObject" to identify the record being edited
-func (s *ShortenerStorageInMemoryRepo) UpdateObject(ctx context.Context, fullyReadyObject *models.Link) (*models.Link, error) {
+func (s *StorageInMemoryRepo) UpdateObject(ctx context.Context, fullyReadyObject *models.Link) (*models.Link, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -82,7 +82,7 @@ func (s *ShortenerStorageInMemoryRepo) UpdateObject(ctx context.Context, fullyRe
 // DeleteObject removes a Link object from storage by its ID
 //
 // err if not exists
-func (s *ShortenerStorageInMemoryRepo) DeleteObject(ctx context.Context, id string) error {
+func (s *StorageInMemoryRepo) DeleteObject(ctx context.Context, id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

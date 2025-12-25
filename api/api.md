@@ -36,7 +36,7 @@ How do I even describe a redirect in it?
 {
   "source_url": "https://ya.ru",
   "short_url": "ksola",
-  "created_at": 1000000000
+  "created_at": "...iso datetime"
 }
 ```
 
@@ -56,18 +56,31 @@ How do I even describe a redirect in it?
 * Input: None
 * Output:
 ```json
-  {
+{
   "source_url": "https://ya.ru",
   "short_url": "<short_url>",
   "total_redirects": 2,
+  "unique_user_agents": 2,
   "data": [
     {
-      "click_at": 1000000000,
-      "user_agent": "..."
+      "minute": "...iso datetime",
+      "clicks_in_minute": 120469101,
+      "data": [
+        {
+          "user_agent": "...",
+          "clicks": 1
+        }
+      ]
     },
     {
-      "click_at": 1000000001,
-      "user_agent": "..."
+      "minute": "...prev datetime + 2 minutes",
+      "clicks_in_minute": 1498532,
+      "data": [
+        {
+          "user_agent": "...",
+          "clicks": 1
+        }
+      ]
     }
   ]
 }
