@@ -3,16 +3,28 @@ package ports
 import (
 	"context"
 	"github.com/chempik1234/L3.2-wb-tech-school-/shortener/internal/models"
-	"github.com/chempik1234/super-danis-library-golang/pkg/genericports"
 )
 
 // ShortenerStorageRepository - port for persistent storage of links
-type ShortenerStorageRepository = objectStorageEnhanced[string, models.Link]
+type ShortenerStorageRepository interface {
 
-type objectStorageEnhanced[I comparable, V genericports.ObjectWithIdentifier[I]] interface {
-	genericports.GenericStoragePort[I, V]
+	// GetObjects - Get all links list from DB
+	GetObjects(ctx context.Context) ([]*models.Link, error)
+
+	// GetObjectByID - Get link by shortURL
+	//
+	// errors.ErrLinkNotFound if not found
+	GetObjectByID(ctx context.Context, shortURL models.ShortURL) (*models.Link, error)
+
+	// CreateObject - Create link with given shortURL
+	//
+	// errors.ErrLinkAlreadyExists if already exists
+	//
+	// MUTATES object -- sets created_at
+	CreateObject(ctx context.Context, fullyReadyObject *models.Link) (*models.Link, error)
+
 	// ObjectExists - check if object with given ID actually exists
-	ObjectExists(ctx context.Context, id I) (bool, error)
+	ObjectExists(ctx context.Context, shortURL models.ShortURL) (bool, error)
 }
 
 // AnalyticsStorageRepository - port for analytics storage. Save a redirect and get aggregated analytics
@@ -25,6 +37,11 @@ type AnalyticsStorageRepository interface {
 	//
 	// They come thousands per second, so do batching please
 	SaveRedirectsBatch(ctx context.Context, redirect []*models.Redirect) error
+
 	// GetAnalytics - get aggregated analytics for models.RedirectDataList
+	//
+	// RESULT IS HALF EMPTY because it can't query LINK model
+	//
+	// LINK FIELD IS EMPTY QUERY IT YOURSELF with ShortenerStorageRepository
 	GetAnalytics(ctx context.Context, shortLink models.ShortURL) (*models.RedirectDataList, error)
 }

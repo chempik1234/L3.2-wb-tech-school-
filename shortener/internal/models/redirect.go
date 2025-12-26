@@ -17,7 +17,7 @@ type Redirect struct {
 type RedirectDataList struct {
 	Link             *Link
 	UniqueUserAgents int
-	Data             []RedirectDataListItem
+	Data             []*RedirectDataListItem
 }
 
 // RedirectDataListItem - item for RedirectDataList.Data
@@ -26,7 +26,7 @@ type RedirectDataList struct {
 type RedirectDataListItem struct {
 	Minute         types.DateTime
 	ClicksInMinute int64
-	Data           []RedirectDataListMinuteItem
+	Data           []*RedirectDataListMinuteItem
 }
 
 // RedirectDataListMinuteItem - item for RedirectDataListItem.Data

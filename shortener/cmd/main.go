@@ -77,8 +77,6 @@ func main() {
 
 	zlog.Logger.Info().Msg("postgres balancer created")
 
-	fmt.Println("postgres stub", postgresDB)
-
 	migrationsPath := "file:///app/db/migrations"
 
 	err = postgres.MigrateUp(cfg.PostgresConfig.MasterDSN, migrationsPath)
@@ -118,6 +116,7 @@ func main() {
 		analyticsStorage,
 		cacheService,
 		cfg.MaxLinkLen,
+		cfg.GeneratedLinkLen,
 		time.Duration(cfg.BatchingPeriodSeconds)*time.Second,
 	)
 	//endregion

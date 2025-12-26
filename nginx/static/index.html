@@ -1,1 +1,660 @@
-# TODO: index.html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сокращатель ссылок</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e1e5eb;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            color: #7f8c8d;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        @media (min-width: 768px) {
+            .app-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .result-url {
+            word-break: break-all;
+            padding: 10px;
+            background-color: #ecf0f1;
+            border-radius: 3px;
+            margin-bottom: 10px;
+        }
+
+        .short-url {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+
+        .full-url {
+            color: #27ae60;
+        }
+
+        .timestamp {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .analytics-data {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            border-top: 3px solid #3498db;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        .time-data {
+            margin-top: 20px;
+        }
+
+        .time-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .time-item:last-child {
+            border-bottom: none;
+        }
+
+        .minute-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .minute-time {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .minute-clicks {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+
+        .user-agent-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .user-agent-item:last-child {
+            border-bottom: none;
+        }
+
+        .user-agent {
+            max-width: 70%;
+            word-break: break-word;
+        }
+
+        .user-agent-clicks {
+            font-weight: 600;
+            color: #3498db;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #7f8c8d;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.error {
+            background-color: #fde8e8;
+            color: #c53030;
+            border-left: 4px solid #c53030;
+        }
+
+        .alert.success {
+            background-color: #e6fffa;
+            color: #234e52;
+            border-left: 4px solid #38b2ac;
+        }
+
+        .api-info {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .api-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .endpoint {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #ecf0f1;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        .redirect-test {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+
+        .test-link {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .test-link:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>Сокращатель ссылок</h1>
+        <p class="description">Создавайте короткие ссылки и отслеживайте их статистику. Максимальная длина короткой ссылки - 30 символов.</p>
+    </header>
+
+    <div class="alert error" id="errorAlert"></div>
+    <div class="alert success" id="successAlert"></div>
+
+    <div class="app-container">
+        <!-- Создание короткой ссылки -->
+        <div class="card">
+            <h2 class="card-title">Создать короткую ссылку</h2>
+            <div class="form-group">
+                <label for="sourceUrl">Исходная ссылка (обязательно)</label>
+                <input type="url" id="sourceUrl" placeholder="https://example.com/длинная-ссылка">
+            </div>
+            <div class="form-group">
+                <label for="shortUrl">Своя короткая ссылка (необязательно, ≤30 символов)</label>
+                <input type="text" id="shortUrl" placeholder="my-link" maxlength="30">
+            </div>
+            <button id="shortenBtn">Создать короткую ссылку</button>
+
+            <div class="loading" id="shortenLoading">
+                <div class="spinner"></div>
+                <p>Создание короткой ссылки...</p>
+            </div>
+
+            <div class="result" id="shortenResult">
+                <div class="result-title">Ваша короткая ссылка создана:</div>
+                <div class="result-url">
+                    <span class="short-url" id="resultShortUrl"></span>
+                </div>
+                <div class="result-title">Перенаправляет на:</div>
+                <div class="result-url">
+                    <span class="full-url" id="resultSourceUrl"></span>
+                </div>
+                <div class="timestamp">Создана: <span id="resultCreatedAt"></span></div>
+
+                <div class="redirect-test">
+                    <p>Проверить редирект: <a href="#" class="test-link" id="testRedirectLink" target="_blank">Открыть в новом окне</a></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Просмотр аналитики -->
+        <div class="card">
+            <h2 class="card-title">Аналитика по короткой ссылке</h2>
+            <div class="form-group">
+                <label for="analyticsShortUrl">Короткая ссылка</label>
+                <input type="text" id="analyticsShortUrl" placeholder="Введите короткую ссылку">
+            </div>
+            <button id="analyticsBtn">Получить аналитику</button>
+
+            <div class="loading" id="analyticsLoading">
+                <div class="spinner"></div>
+                <p>Загрузка аналитики...</p>
+            </div>
+
+            <div class="analytics-data" id="analyticsData">
+                <!-- Здесь будет отображаться аналитика -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Информация об API -->
+    <div class="api-info">
+        <div class="api-title">Информация об API:</div>
+        <div class="endpoint"><strong>POST /shorten</strong> - Создание короткой ссылки</div>
+        <div class="endpoint"><strong>GET /s/{short_url}</strong> - Редирект на исходный URL</div>
+        <div class="endpoint"><strong>GET /analytics/{short_url}</strong> - Аналитика по короткой ссылке</div>
+    </div>
+</div>
+
+<script>
+    // Базовый URL API
+    const API_BASE_URL = 'http://localhost:80/api'; // Измените на ваш реальный URL
+
+    // Элементы DOM
+    const sourceUrlInput = document.getElementById('sourceUrl');
+    const shortUrlInput = document.getElementById('shortUrl');
+    const shortenBtn = document.getElementById('shortenBtn');
+    const shortenLoading = document.getElementById('shortenLoading');
+    const shortenResult = document.getElementById('shortenResult');
+    const resultShortUrl = document.getElementById('resultShortUrl');
+    const resultSourceUrl = document.getElementById('resultSourceUrl');
+    const resultCreatedAt = document.getElementById('resultCreatedAt');
+    const testRedirectLink = document.getElementById('testRedirectLink');
+
+    const analyticsShortUrlInput = document.getElementById('analyticsShortUrl');
+    const analyticsBtn = document.getElementById('analyticsBtn');
+    const analyticsLoading = document.getElementById('analyticsLoading');
+    const analyticsData = document.getElementById('analyticsData');
+
+    const errorAlert = document.getElementById('errorAlert');
+    const successAlert = document.getElementById('successAlert');
+
+    // Показать уведомление об ошибке
+    function showError(message) {
+        errorAlert.textContent = message;
+        errorAlert.style.display = 'block';
+        successAlert.style.display = 'none';
+
+        setTimeout(() => {
+            errorAlert.style.display = 'none';
+        }, 5000);
+    }
+
+    // Показать уведомление об успехе
+    function showSuccess(message) {
+        successAlert.textContent = message;
+        successAlert.style.display = 'block';
+        errorAlert.style.display = 'none';
+
+        setTimeout(() => {
+            successAlert.style.display = 'none';
+        }, 5000);
+    }
+
+    // Создание короткой ссылки
+    async function createShortUrl() {
+        const sourceUrl = sourceUrlInput.value.trim();
+        const shortUrl = shortUrlInput.value.trim();
+
+        // Валидация
+        if (!sourceUrl) {
+            showError('Пожалуйста, введите исходную ссылку');
+            return;
+        }
+
+        try {
+            // Показать индикатор загрузки
+            shortenLoading.style.display = 'block';
+            shortenBtn.disabled = true;
+
+            // Подготовка данных для отправки
+            const requestData = {
+                source_url: sourceUrl
+            };
+
+            // Добавить короткую ссылку только если она не пустая
+            if (shortUrl) {
+                requestData.short_url = shortUrl;
+            }
+
+            // Отправка запроса
+            const response = await fetch(`${API_BASE_URL}/shorten`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.detail || 'Ошибка при создании короткой ссылки');
+            }
+
+            // Отображение результата
+            resultShortUrl.textContent = `${window.location.origin}/s/${data.short_url}`;
+            resultSourceUrl.textContent = data.source_url;
+            resultCreatedAt.textContent = new Date(data.created_at).toLocaleString('ru-RU');
+
+            // Обновление ссылки для тестирования редиректа
+            testRedirectLink.href = `/s/${data.short_url}`;
+
+            // Показать результат
+            shortenResult.classList.add('show');
+
+            // Очистить поля ввода
+            sourceUrlInput.value = '';
+            shortUrlInput.value = '';
+
+            // Автоматически загрузить аналитику для созданной ссылки
+            analyticsShortUrlInput.value = data.short_url;
+            getAnalytics(data.short_url);
+
+            showSuccess('Короткая ссылка успешно создана!');
+
+        } catch (error) {
+            console.error('Ошибка:', error);
+            showError(error.message);
+        } finally {
+            // Скрыть индикатор загрузки
+            shortenLoading.style.display = 'none';
+            shortenBtn.disabled = false;
+        }
+    }
+
+    // Получение аналитики
+    async function getAnalytics(shortUrl = null) {
+        const urlToCheck = shortUrl || analyticsShortUrlInput.value.trim();
+
+        // Валидация
+        if (!urlToCheck) {
+            showError('Пожалуйста, введите короткую ссылку');
+            return;
+        }
+
+        try {
+            // Показать индикатор загрузки
+            analyticsLoading.style.display = 'block';
+            analyticsBtn.disabled = true;
+            analyticsData.innerHTML = '';
+
+            // Отправка запроса
+            const response = await fetch(`${API_BASE_URL}/analytics/${urlToCheck}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.detail || 'Ошибка при получении аналитики');
+            }
+
+            // Отображение аналитики
+            displayAnalytics(data);
+
+        } catch (error) {
+            console.error('Ошибка:', error);
+            showError(error.message);
+            analyticsData.innerHTML = `
+                    <div class="empty-state">
+                        <p>Не удалось загрузить аналитику для "${urlToCheck}"</p>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+        } finally {
+            // Скрыть индикатор загрузки
+            analyticsLoading.style.display = 'none';
+            analyticsBtn.disabled = false;
+        }
+    }
+
+    // Отображение аналитики
+    function displayAnalytics(data) {
+        let html = `
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value">${data.total_redirects || 0}</div>
+                        <div class="stat-label">Всего переходов</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${data.unique_user_agents || 0}</div>
+                        <div class="stat-label">Уникальных User-Agent</div>
+                    </div>
+                </div>
+                <div class="result-url">
+                    <strong>Исходная ссылка:</strong> <span class="full-url">${data.source_url}</span>
+                </div>
+                <div class="result-url">
+                    <strong>Короткая ссылка:</strong> <span class="short-url">${data.short_url}</span>
+                </div>
+            `;
+
+        if (data.data && data.data.length > 0) {
+            html += `<div class="time-data">`;
+
+            data.data.forEach(item => {
+                const minuteTime = new Date(item.minute).toLocaleString('ru-RU');
+
+                html += `
+                        <div class="time-item">
+                            <div class="minute-header">
+                                <div class="minute-time">${minuteTime}</div>
+                                <div class="minute-clicks">${item.clicks_in_minute} переходов</div>
+                            </div>
+                    `;
+
+                if (item.data && item.data.length > 0) {
+                    html += `<div class="user-agents">`;
+
+                    item.data.forEach(agentData => {
+                        html += `
+                                <div class="user-agent-item">
+                                    <div class="user-agent">${agentData.user_agent || 'Неизвестный'}</div>
+                                    <div class="user-agent-clicks">${agentData.clicks} клик(ов)</div>
+                                </div>
+                            `;
+                    });
+
+                    html += `</div>`;
+                }
+
+                html += `</div>`;
+            });
+
+            html += `</div>`;
+        } else {
+            html += `
+                    <div class="empty-state">
+                        <p>Для этой ссылки еще нет данных аналитики</p>
+                    </div>
+                `;
+        }
+
+        analyticsData.innerHTML = html;
+    }
+
+    // Обработчики событий
+    shortenBtn.addEventListener('click', createShortUrl);
+
+    analyticsBtn.addEventListener('click', () => {
+        getAnalytics();
+    });
+
+    // Разрешить отправку формы по нажатию Enter
+    sourceUrlInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') createShortUrl();
+    });
+
+    shortUrlInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') createShortUrl();
+    });
+
+    analyticsShortUrlInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') getAnalytics();
+    });
+
+    // Инициализация - загрузить аналитику для примера
+    window.addEventListener('load', () => {
+        // Можно предзагрузить аналитику для какой-то ссылки по умолчанию
+        // Например: analyticsShortUrlInput.value = 'example';
+        // getAnalytics('example');
+    });
+</script>
+</body>
+</html>

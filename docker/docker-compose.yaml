@@ -26,17 +26,21 @@ x-shortener-template: &shortener-template
 services:
   shortener_1:
     <<: *shortener-template
-    expose:
-      - "8081"
-    scale: 2
+    ports:
+      - "8081:8081"
+    environment:
+      SHORTENER_HTTP_SERVER_PORT: 8081
+    # scale: 1
     networks:
       - backend
 
   shortener_2:
     <<: *shortener-template
-    expose:
-      - "8082"
-    scale: 2
+    ports:
+      - "8082:8082"
+    environment:
+      SHORTENER_HTTP_SERVER_PORT: 8082
+    # scale: 1
     networks:
       - backend
 

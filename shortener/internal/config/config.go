@@ -21,6 +21,7 @@ type AppConfig struct {
 
 	MaxLinkLen            int `env:"SHORTENER_MAX_LINK_LEN"`
 	BatchingPeriodSeconds int `env:"SHORTENER_BATCHING_PERIOD_SECONDS"`
+	GeneratedLinkLen      int `env:"SHORTENER_GENERATED_LINK_LEN"`
 }
 
 // NewAppConfig creates a new struct of "THE config"
@@ -120,6 +121,7 @@ func NewAppConfig(configFilePath, envFilePath string) (*AppConfig, error) {
 			Backoff:           cfg.GetFloat64("shortener.retry_redis.backoff"),
 		},
 		MaxLinkLen:            cfg.GetInt("shortener.max_link_len"),
+		GeneratedLinkLen:      cfg.GetInt("shortener.generated_link_len"),
 		BatchingPeriodSeconds: cfg.GetInt("shortener.batching_period_seconds"),
 	}
 

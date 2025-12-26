@@ -9,6 +9,8 @@ import (
 func AssembleRouter(shortenerHandler *ShortenerHandler) *ginext.Engine {
 	router := ginext.New("release")
 
+	// TODO: middleware that adds logger.Logger to context
+
 	router.POST("/shorten", shortenerHandler.CreateLink)
 	router.GET(fmt.Sprintf("/s/:%s", shortLinkParam), shortenerHandler.RedirectLink)
 	router.GET(fmt.Sprintf("/analytics/:%s", shortLinkParam), shortenerHandler.AnalyticsLink)

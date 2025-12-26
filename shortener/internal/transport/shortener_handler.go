@@ -2,8 +2,10 @@ package transport
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/chempik1234/L3.2-wb-tech-school-/shortener/internal/dto"
+	errors2 "github.com/chempik1234/L3.2-wb-tech-school-/shortener/internal/errors"
 	"github.com/chempik1234/L3.2-wb-tech-school-/shortener/internal/models"
 	"github.com/chempik1234/L3.2-wb-tech-school-/shortener/internal/service"
 	"github.com/chempik1234/super-danis-library-golang/pkg/types"
@@ -52,11 +54,11 @@ func (h *ShortenerHandler) CreateLink(c *gin.Context) {
 
 	result, err := h.shortenerService.CreateLink(context.Background(), createModel)
 	if err != nil {
+		zlog.Logger.Error().Err(err).Any("body", body).Msg("couldn't create link")
 		c.AbortWithStatusJSON(
-			http.StatusConflict,
+			h.statusForError(err),
 			gin.H{"error": fmt.Sprintf("couldn't perform operation: %s", err.Error())},
 		)
-		zlog.Logger.Error().Err(err).Any("body", body).Msg("couldn't create link")
 		return
 	}
 
@@ -66,8 +68,12 @@ func (h *ShortenerHandler) CreateLink(c *gin.Context) {
 
 // RedirectLink GET /s/:short_url
 func (h *ShortenerHandler) RedirectLink(c *gin.Context) {
-	shortLink, link := h.getShortLinkAndLink(c)
-	if link == nil {
+	shortLink, link, err := h.getShortLinkAndLink(c)
+	if err != nil || link == nil {
+		c.AbortWithStatusJSON(
+			h.statusForError(err),
+			gin.H{"error": err},
+		)
 		return
 	}
 
@@ -75,7 +81,7 @@ func (h *ShortenerHandler) RedirectLink(c *gin.Context) {
 
 	zlog.Logger.Info().Stringer("user_agent", userAgent).Msg("new redirect")
 
-	go func(link *models.Link) {
+	go func() {
 		saveErr := h.shortenerService.SaveRedirect(
 			context.Background(),
 			// convert to ShortURL because in this case, we must use types.NotEmptyText to validate
@@ -87,54 +93,58 @@ func (h *ShortenerHandler) RedirectLink(c *gin.Context) {
 		if saveErr != nil {
 			zlog.Logger.Error().Err(saveErr).Msg("error saving link")
 		}
-	}(link)
+	}()
 
 	c.Redirect(http.StatusPermanentRedirect, link.SourceURL.String())
 }
 
 // AnalyticsLink GET /analytics/:short_url
 func (h *ShortenerHandler) AnalyticsLink(c *gin.Context) {
-	shortLink, link := h.getShortLinkAndLink(c)
-	if link == nil {
-		return
+	shortLink, link, err := h.getShortLinkAndLink(c)
+	if err != nil || link == nil {
+		c.AbortWithStatusJSON(
+			h.statusForError(err),
+			gin.H{"error": err},
+		)
 	}
 
-	// convert to ShortURL because in this case, we must use types.NotEmptyText to validate
-	// and not types.AnyText which ShortURL IS under the hood
-	analyticsData, err := h.shortenerService.GetAnalytics(context.Background(), models.ShortURL(shortLink))
+	analyticsData, err := h.shortenerService.GetAnalytics(context.Background(), link)
 	if err != nil {
+		zlog.Logger.Error().Err(err).Stringer(shortLinkParam, shortLink).Msg("couldn't create link")
 		c.AbortWithStatusJSON(
-			http.StatusConflict,
+			h.statusForError(err),
 			gin.H{"error": fmt.Sprintf("couldn't perform operation: %s", err.Error())},
 		)
-		zlog.Logger.Error().Err(err).Stringer(shortLinkParam, shortLink).Msg("couldn't create link")
 	}
 
 	c.JSON(http.StatusOK, dto.AnalyticsBodyFromDataList(analyticsData))
 }
 
-func (h *ShortenerHandler) getShortLinkAndLink(c *gin.Context) (types.NotEmptyText, *models.Link) {
+func (h *ShortenerHandler) getShortLinkAndLink(c *gin.Context) (types.NotEmptyText, *models.Link, error) {
 	// models.ShortURL is actually types2.NotEmptyText
 	shortLink, err := types.NewNotEmptyText(c.Param(shortLinkParam))
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
-		return "", nil
+		return "", nil, errors2.NewValidationError(errors.New("link mustn't be empty"))
 	}
 
 	var link *models.Link
 	link, err = h.shortenerService.GetLink(context.Background(), models.ShortURL(shortLink))
 	if err != nil {
-		c.AbortWithStatusJSON(
-			http.StatusInternalServerError,
-			gin.H{"error": fmt.Errorf("error getting link for '%s': %w", shortLink, err)},
-		)
-		return "", nil
+		return shortLink, nil, fmt.Errorf("error getting link for '%s': %w", shortLink, err)
 	}
 
 	if link == nil {
-		c.AbortWithStatus(http.StatusNotFound)
-		return "", nil
+		return shortLink, nil, fmt.Errorf("link not found: %s", shortLink)
 	}
 
-	return shortLink, link
+	return shortLink, link, nil
+}
+
+func (h *ShortenerHandler) statusForError(err error) int {
+	if errors.Is(err, errors2.ErrLinkNotFound) {
+		return http.StatusNotFound
+	} else if errors.Is(err, errors2.ErrLinkAlreadyExists) {
+		return http.StatusConflict
+	}
+	return http.StatusInternalServerError
 }

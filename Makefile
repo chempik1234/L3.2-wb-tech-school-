@@ -31,3 +31,7 @@ build:
 
 init_env:
 	type ".\config\example.env" > ".\config\.env"
+
+lint:
+	cd shortener && \
+ 		golangci-lint run ./... --config ../golangci-lint.yml

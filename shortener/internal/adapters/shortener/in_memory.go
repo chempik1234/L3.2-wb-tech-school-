@@ -22,7 +22,7 @@ func NewStorageInMemoryRepo() *StorageInMemoryRepo {
 }
 
 // GetObjects retrieves all Link objects from storage
-func (s *StorageInMemoryRepo) GetObjects(ctx context.Context) ([]*models.Link, error) {
+func (s *StorageInMemoryRepo) GetObjects(_ context.Context) ([]*models.Link, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -36,7 +36,7 @@ func (s *StorageInMemoryRepo) GetObjects(ctx context.Context) ([]*models.Link, e
 // GetObjectByID retrieves a Link object by its ID
 //
 // error on not exists
-func (s *StorageInMemoryRepo) GetObjectByID(ctx context.Context, id string) (*models.Link, error) {
+func (s *StorageInMemoryRepo) GetObjectByID(_ context.Context, id string) (*models.Link, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -52,7 +52,7 @@ func (s *StorageInMemoryRepo) GetObjectByID(ctx context.Context, id string) (*mo
 // Given shortURL is used, so pre-generate it!
 //
 // Error on conflict
-func (s *StorageInMemoryRepo) CreateObject(ctx context.Context, fullyReadyObject *models.Link) (*models.Link, error) {
+func (s *StorageInMemoryRepo) CreateObject(_ context.Context, fullyReadyObject *models.Link) (*models.Link, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -64,32 +64,9 @@ func (s *StorageInMemoryRepo) CreateObject(ctx context.Context, fullyReadyObject
 	return fullyReadyObject, nil
 }
 
-// UpdateObject updates an existing Link object in storage
-//
-// uses shortURL given in "fullyReadyObject" to identify the record being edited
-func (s *StorageInMemoryRepo) UpdateObject(ctx context.Context, fullyReadyObject *models.Link) (*models.Link, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if _, exists := s.data[fullyReadyObject.GetUniqueIdentifier()]; !exists {
-		return nil, errors.ErrLinkNotFound
-	}
-
-	s.data[fullyReadyObject.GetUniqueIdentifier()] = fullyReadyObject
-	return fullyReadyObject, nil
-}
-
-// DeleteObject removes a Link object from storage by its ID
-//
-// err if not exists
-func (s *StorageInMemoryRepo) DeleteObject(ctx context.Context, id string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if _, exists := s.data[id]; !exists {
-		return errors.ErrLinkNotFound
-	}
-
-	delete(s.data, id)
-	return nil
+func (s *StorageInMemoryRepo) ObjectExists(_ context.Context, shortURL models.ShortURL) (bool, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	_, ok := s.data[shortURL.String()]
+	return ok, nil
 }

@@ -1,0 +1,1 @@
+ALTER TABLE redirects ALTER COLUMN short_url TYPE VARCHAR(6);

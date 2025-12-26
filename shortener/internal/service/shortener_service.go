@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	errors2 "github.com/chempik1234/L3.2-wb-tech-school-/shortener/internal/errors"
 	"github.com/chempik1234/L3.2-wb-tech-school-/shortener/internal/models"
 	"github.com/chempik1234/L3.2-wb-tech-school-/shortener/internal/ports"
 	"github.com/chempik1234/super-danis-library-golang/pkg/services"
@@ -22,8 +23,9 @@ type ShortenerService struct {
 	shortenerStorageRepository ports.ShortenerStorageRepository
 	analyticsStorageRepository ports.AnalyticsStorageRepository
 
-	maxLinkLen     int
-	batchingPeriod time.Duration
+	maxLinkLen      int
+	generateLinkLen int
+	batchingPeriod  time.Duration
 
 	// init chan only when running saving in background!
 	redirectsForBatching chan *models.Redirect
@@ -35,6 +37,7 @@ func NewShortenerService(
 	analyticsStorage ports.AnalyticsStorageRepository,
 	cache *services.CachePopularService[string, models.Link],
 	maxLinkLen int,
+	generateLinkLen int,
 	batchingPeriod time.Duration,
 ) *ShortenerService {
 	return &ShortenerService{
@@ -42,6 +45,7 @@ func NewShortenerService(
 		analyticsStorageRepository: analyticsStorage,
 		cacheService:               cache,
 		maxLinkLen:                 maxLinkLen,
+		generateLinkLen:            generateLinkLen,
 		redirectsForBatching:       nil, // init channel only in Run...
 		batchingPeriod:             batchingPeriod,
 	}
@@ -52,8 +56,10 @@ func NewShortenerService(
 // cacheService.minUses < 1 ==> also cache
 func (s *ShortenerService) CreateLink(ctx context.Context, model *models.Link) (*models.Link, error) {
 	if len(model.ShortURL.String()) == 0 {
-		link := s.generateURL(ctx, s.maxLinkLen)
+		link := s.generateURL(ctx, s.generateLinkLen)
 		model.ShortURL = link
+	} else if len(model.ShortURL.String()) > s.maxLinkLen {
+		return nil, errors2.NewValidationError(fmt.Errorf("your link mustn't be longer than %d", s.maxLinkLen))
 	}
 
 	result, err := s.shortenerStorageRepository.CreateObject(ctx, model)
@@ -84,7 +90,7 @@ func (s *ShortenerService) GetLink(ctx context.Context, linkString models.ShortU
 	// step 1. try to get from cache
 	if link, err = s.cacheService.Get(ctx, linkString.String()); err != nil {
 		// step 2. try to get from storage
-		if link, err = s.shortenerStorageRepository.GetObjectByID(ctx, linkString.String()); err != nil {
+		if link, err = s.shortenerStorageRepository.GetObjectByID(ctx, linkString); err != nil {
 			return nil, fmt.Errorf("storage error: %w", err)
 		}
 
@@ -102,7 +108,7 @@ func (s *ShortenerService) GetLink(ctx context.Context, linkString models.ShortU
 // SaveRedirect - creates record in analytics table
 //
 // WORKS ONLY after ShortenerService.RunBatchSavingInBackground has started!
-func (s *ShortenerService) SaveRedirect(ctx context.Context, shortLink models.ShortURL, userAgent types.AnyText, clickAt types.DateTime) error {
+func (s *ShortenerService) SaveRedirect(_ context.Context, shortLink models.ShortURL, userAgent types.AnyText, clickAt types.DateTime) error {
 	if s.redirectsForBatching != nil {
 		s.redirectsForBatching <- &models.Redirect{
 			ClickAt:   clickAt,
@@ -114,11 +120,14 @@ func (s *ShortenerService) SaveRedirect(ctx context.Context, shortLink models.Sh
 }
 
 // GetAnalytics - return aggregated models.RedirectDataList analytics
-func (s *ShortenerService) GetAnalytics(ctx context.Context, shortURL models.ShortURL) (*models.RedirectDataList, error) {
-	data, err := s.analyticsStorageRepository.GetAnalytics(ctx, shortURL)
+func (s *ShortenerService) GetAnalytics(ctx context.Context, link *models.Link) (*models.RedirectDataList, error) {
+	data, err := s.analyticsStorageRepository.GetAnalytics(ctx, link.ShortURL)
 	if err != nil {
 		return nil, fmt.Errorf("analytics error: %w", err)
 	}
+
+	data.Link = link
+
 	return data, nil
 }
 
@@ -144,7 +153,7 @@ func (s *ShortenerService) generateURL(ctx context.Context, length int) types.An
 
 // LinkExists - check if link actually exists in cache or storage
 func (s *ShortenerService) LinkExists(ctx context.Context, link types.AnyText) (bool, error) {
-	return s.shortenerStorageRepository.ObjectExists(ctx, link.String())
+	return s.shortenerStorageRepository.ObjectExists(ctx, link)
 }
 
 // RunBatchSavingInBackground - run saving redirects in batches
